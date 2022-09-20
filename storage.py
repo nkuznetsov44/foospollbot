@@ -6,7 +6,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from models import TelegramUser
+from models.entities import TelegramUser
 from exceptions import TelegramUserDoesNotExist
 
 

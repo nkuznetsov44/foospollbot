@@ -1,7 +1,7 @@
 from aiogram.types.message import Message
 
 from app import dp, storage, start_app
-from models import TelegramUser, UserInfo, UserState
+from models.entities import TelegramUser, UserInfo, UserState
 from filters import UserStateFilter
 from state_machine import UserStateMachine
 from validators import PhoneValidator, RtsfUrlValidator
@@ -36,7 +36,7 @@ async def collect_first_name_handler(message: Message) -> None:
         user_sm = UserStateMachine(user_info.state)
 
         user_info.first_name = first_name
-        user_sm.set_first_name()
+        user_sm.next()
         user_info.state = user_sm.state
 
         session.add(user_info)
@@ -55,7 +55,7 @@ async def collect_last_name_handler(message: Message) -> None:
         user_sm = UserStateMachine(user_info.state)
 
         user_info.last_name = last_name
-        user_sm.set_last_name()
+        user_sm.next()
         user_info.state = user_sm.state
 
         session.add(user_info)
@@ -76,7 +76,7 @@ async def collect_phone_handler(message: Message) -> None:
         user_sm = UserStateMachine(user_info.state)
 
         user_info.phone = phone
-        user_sm.set_phone()
+        user_sm.next()
         user_info.state = user_sm.state
 
         session.add(user_info)
@@ -100,7 +100,7 @@ async def collect_rtsf_url_handler(message) -> None:
         user_sm = UserStateMachine(user_info.state)
 
         user_info.rtsf_url = rtsf_url
-        user_sm.set_rtsf_url()
+        user_sm.next()
         user_info.state = user_sm.state
 
         session.add(user_info)

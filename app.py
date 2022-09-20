@@ -6,6 +6,7 @@ from aiogram.utils.executor import start_webhook
 from sqlalchemy.ext.asyncio import create_async_engine
 from settings import settings
 from storage import Storage
+from models.mapping import mapper_registry
 
 
 level = logging.getLevelName(settings['log_level'])
@@ -22,6 +23,7 @@ connection_string = (
     )
 )
 engine = create_async_engine(connection_string, echo=True)
+mapper_registry.configure()
 storage = Storage()
 storage.setup_db_engine(engine)
 

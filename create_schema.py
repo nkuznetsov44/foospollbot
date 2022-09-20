@@ -1,10 +1,10 @@
 from sqlalchemy import create_engine
 from settings import settings
-from models import Base
+from models.tables import metadata_obj
 
 
 def create_schema(engine):
-    Base.metadata.create_all(engine)
+    metadata_obj.create_all(engine)
 
 
 if __name__ == "__main__":

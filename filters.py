@@ -4,7 +4,7 @@ from aiogram.types.message import Message
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from models import TelegramUser, UserState
+from models.entities import TelegramUser, UserState
 from storage import Storage
 
 
