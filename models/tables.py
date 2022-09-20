@@ -19,7 +19,7 @@ evks_players = sa.Table(
     metadata_obj,
     sa.Column('id', sa.Integer, primary_key=True),
     sa.Column('first_name', sa.String),
-    sa.Column('last_name', sa.Column(sa.String)),
+    sa.Column('last_name', sa.String),
     sa.Column('itsf_first_name', sa.String, nullable=True),
     sa.Column('itsf_last_name', sa.String, nullable=True),
     sa.Column('itsf_license', sa.Integer, nullable=True),
@@ -31,14 +31,19 @@ user_infos = sa.Table(
     'user_infos',
     metadata_obj,
     sa.Column('id', sa.Integer, primary_key=True, autoincrement=True),
-    sa.Column('telegram_user_id', sa.Integer, sa.ForeignKey('telegram_users.id'), unique=True),
+    sa.Column(
+        'telegram_user_id',
+        sa.Integer,
+        sa.ForeignKey('telegram_users.id', ondelete='CASCADE'),
+        unique=True,
+    ),
     sa.Column('first_name', sa.String, nullable=True),
     sa.Column('last_name', sa.String, nullable=True),
     sa.Column('phone', sa.String, nullable=True),
     sa.Column('rtsf_url', sa.String, nullable=True),
     sa.Column('evks_player_id', sa.Integer, sa.ForeignKey('evks_players.id'), unique=True),
     sa.Column('state', sa.Enum(UserState)),
-    
+    sa.Column('created', sa.DateTime, server_default=func.now()),
     sa.Column('updated', sa.DateTime, onupdate=func.now()),
 )
 

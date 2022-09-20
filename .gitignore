@@ -1,3 +1,5 @@
+.DS_Store
 env/
 __pycache__/
 settings/settings.yaml
+data/evks_players.csv

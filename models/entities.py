@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import date, datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, unique
 
 
@@ -10,11 +10,11 @@ class EvksPlayer:
     evks_player_id: int
     first_name: str
     last_name: str
-    itsf_first_name: Optional[str]
-    itsf_last_name: Optional[str]
-    itsf_license: Optional[int]
     foreigner: bool
     last_competition_date: date
+    itsf_first_name: Optional[str] = None
+    itsf_last_name: Optional[str] = None
+    itsf_license: Optional[int] = None
 
 
 @unique
@@ -34,18 +34,16 @@ class UserState(Enum):
 class UserInfo:
     id: int
     telegram_user_id: int
-
-    first_name: Optional[str]
-    last_name: Optional[str]
-    phone: Optional[str]
-    rtsf_url: Optional[str]
-
-    evks_player: Optional[EvksPlayer]
-
     state: UserState
 
-    created: datetime
-    updated: Optional[datetime]
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    phone: Optional[str] = None
+    rtsf_url: Optional[str] = None
+    evks_player: Optional[EvksPlayer] = None
+
+    created: Optional[datetime] = field(init=False)
+    updated: Optional[datetime] = field(init=False)
 
 
 @dataclass
@@ -70,4 +68,5 @@ class VoteResult:
     telegram_user: TelegramUser
     selected_option: VoteOption
     secret_code: str
-    created: datetime
+
+    created: Optional[datetime] = field(init=False)

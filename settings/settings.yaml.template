@@ -1,0 +1,12 @@
+db:
+  user: mydatabaseuser
+  password: mydatabasepassword
+  database: mydatabasename
+  host: localhost
+  port: 5432
+log_level: DEBUG
+telegram_token: mysecretbottoken
+webhook_url: mywebhookurl
+webhook_path: /
+host: localhost
+port: 8080

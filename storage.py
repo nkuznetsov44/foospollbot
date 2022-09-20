@@ -6,8 +6,8 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
-from models.entities import TelegramUser
-from exceptions import TelegramUserDoesNotExist
+from models.entities import EvksPlayer, TelegramUser
+from exceptions import EvksPlayerDoesNotExist, TelegramUserDoesNotExist
 
 
 class Storage:
@@ -36,4 +36,16 @@ class Storage:
         try:
             return result.one()[0]
         except NoResultFound as e:
-            raise TelegramUserDoesNotExist(user_id=telegram_user_id) from e
+            raise TelegramUserDoesNotExist(telegram_user_id=telegram_user_id) from e
+
+    async def get_evks_player_by_id(
+        self, session: AsyncSession, evks_player_id: int
+    ) -> EvksPlayer:
+        result = await session.execute(
+            select(EvksPlayer)
+            .where(EvksPlayer.id == evks_player_id)
+        )
+        try:
+            return result.one()[0]
+        except NoResultFound as e:
+            raise EvksPlayerDoesNotExist(evks_player_id=evks_player_id) from e

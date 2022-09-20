@@ -11,7 +11,7 @@ _transitions = [
         'trigger': 'accept',
         'source': UserState.IN_REVIEW,
         'dest': UserState.ACCEPTED,
-        'condition': 'has_full_info',
+        'conditions': 'has_full_info',
     },
     {'trigger': 'reject', 'source': UserState.IN_REVIEW, 'dest': UserState.REJECTED},
     {'trigger': 'start_vote', 'source': UserState.ACCEPTED, 'dest': UserState.VOTING},
@@ -33,7 +33,7 @@ class UserStateMachine:
         return UserState.COLLECTING_FIRST_NAME
 
     def has_full_info(self, telegram_user: TelegramUser) -> bool:
-        return (
+        return all(
             telegram_user.user_info.first_name is not None,
             telegram_user.user_info.last_name is not None,
             telegram_user.user_info.phone is not None,
