@@ -11,7 +11,6 @@ from models.mapping import mapper_registry
 
 level = logging.getLevelName(settings["log_level"])
 logging.basicConfig(level=level)
-logger = logging.getLogger(__name__)
 
 bot = Bot(token=settings["telegram_token"])
 dp = Dispatcher(bot)
