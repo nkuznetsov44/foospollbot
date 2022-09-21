@@ -42,8 +42,7 @@ class Storage:
         self, session: AsyncSession, evks_player_id: int
     ) -> EvksPlayer:
         result = await session.execute(
-            select(EvksPlayer)
-            .where(EvksPlayer.id == evks_player_id)
+            select(EvksPlayer).where(EvksPlayer.id == evks_player_id)
         )
         try:
             return result.one()[0]

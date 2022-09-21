@@ -19,15 +19,15 @@ class EvksPlayer:
 
 @unique
 class UserState(Enum):
-    COLLECTING_FIRST_NAME = 'collecting_first_name'
-    COLLECTING_LAST_NAME = 'collecting_last_name'
-    COLLECTING_PHONE = 'collecting_phone'
-    COLLECTING_RTSF_URL = 'collecting_rtsf_url'
-    IN_REVIEW = 'in_review'
-    ACCEPTED = 'accepted'
-    REJECTED = 'rejected'
-    VOTING = 'voting'
-    VOTED = 'voted'
+    COLLECTING_FIRST_NAME = "collecting_first_name"
+    COLLECTING_LAST_NAME = "collecting_last_name"
+    COLLECTING_PHONE = "collecting_phone"
+    COLLECTING_RTSF_URL = "collecting_rtsf_url"
+    IN_REVIEW = "in_review"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    VOTING = "voting"
+    VOTED = "voted"
 
 
 @dataclass

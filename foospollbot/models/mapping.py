@@ -20,9 +20,7 @@ mapper_registry = registry()
 mapper_registry.map_imperatively(
     TelegramUser,
     telegram_users,
-    properties={
-        'user_info': relationship(UserInfo, uselist=False)
-    },
+    properties={"user_info": relationship(UserInfo, uselist=False)},
 )
 
 mapper_registry.map_imperatively(EvksPlayer, evks_players)
@@ -30,9 +28,7 @@ mapper_registry.map_imperatively(EvksPlayer, evks_players)
 mapper_registry.map_imperatively(
     UserInfo,
     user_infos,
-    properties={
-        'evks_player': relationship(EvksPlayer, uselist=False)
-    }
+    properties={"evks_player": relationship(EvksPlayer, uselist=False)},
 )
 
 mapper_registry.map_imperatively(VoteOption, vote_options)
@@ -41,7 +37,7 @@ mapper_registry.map_imperatively(
     VoteResult,
     vote_results,
     properties={
-        'telegram_user': relationship(TelegramUser, uselist=False),
-        'vote_option': relationship(VoteOption, uselist=False),
-    }
+        "telegram_user": relationship(TelegramUser, uselist=False),
+        "vote_option": relationship(VoteOption, uselist=False),
+    },
 )
