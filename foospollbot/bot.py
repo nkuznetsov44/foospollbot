@@ -38,10 +38,9 @@ async def start_handler(message: Message) -> None:
 
     async with storage.session() as session:
         session.add(telegram_user)
-        session.add(user_info)
         await session.commit()
 
-    logger.info(f"Saved user {telegram_user}")
+    logger.info(f"Saved user {telegram_user.id}")
     await message.answer(text="Сообщите свое имя")
 
 
@@ -132,7 +131,7 @@ async def collect_rtsf_url_handler(message: Message) -> None:
             session.add(user_info)
             await session.commit()
 
-        logger.info(f"Application completed for user {telegram_user}")
+        logger.info(f"Application completed for user {telegram_user.id}")
         await message.answer(
             text="Заявка создана. Она будет проверена вручную. Ждите результатов."
         )
@@ -143,6 +142,7 @@ async def collect_rtsf_url_handler(message: Message) -> None:
             ) from e
 
 
+"""
 @dp.message_handler(ExceptionsFilter(PhoneParseError))
 async def phone_parse_error_handler(message: Message) -> None:
     await message.answer(
@@ -172,7 +172,7 @@ async def evks_player_already_registered_handler(message: Message) -> None:
         "Участник рейтинга уже зарегистирирован. "
         "Пожалуйста, обратитесь к организаторам."
     )
-
+"""
 
 if __name__ == "__main__":
     start_app()
