@@ -28,8 +28,7 @@ class Storage:
         self, session: AsyncSession, telegram_user_id: int
     ) -> TelegramUser:
         result = await session.execute(
-            select(TelegramUser)
-            .where(TelegramUser.id == telegram_user_id)
+            select(TelegramUser).where(TelegramUser.id == telegram_user_id)
         )
         try:
             return result.one()[0]
@@ -39,10 +38,7 @@ class Storage:
     async def get_user_info(
         self, session: AsyncSession, telegram_user_id: int, for_update: bool = False
     ) -> UserInfo:
-        stmt = (
-            select(UserInfo)
-            .where(UserInfo.telegram_user_id == telegram_user_id)
-        )
+        stmt = select(UserInfo).where(UserInfo.telegram_user_id == telegram_user_id)
         if for_update:
             stmt = stmt.with_for_update()
 

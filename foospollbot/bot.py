@@ -34,7 +34,7 @@ def enrich_logs(handler_name: str, message: Message) -> None:
 
 @dp.message_handler(NewUserFilter())
 async def new_user_handler(message: Message) -> None:
-    with enrich_logs('new_user', message):
+    with enrich_logs("new_user", message):
         logger.info("NEW_USER")
 
         async with storage.session() as session:
@@ -66,7 +66,7 @@ async def new_user_handler(message: Message) -> None:
 
 @dp.message_handler(UserStateFilter(UserState.COLLECTING_FIRST_NAME))
 async def collect_first_name_handler(message: Message) -> None:
-    with enrich_logs('collect_first_name', message):
+    with enrich_logs("collect_first_name", message):
         logger.info("COLLECTING_FIRST_NAME")
 
         first_name = message.text.strip()
@@ -93,7 +93,7 @@ async def collect_first_name_handler(message: Message) -> None:
 
 @dp.message_handler(UserStateFilter(UserState.COLLECTING_LAST_NAME))
 async def collect_last_name_handler(message: Message) -> None:
-    with enrich_logs('collect_last_name', message):
+    with enrich_logs("collect_last_name", message):
         logger.info("COLLECTING_LAST_NAME")
 
         last_name = message.text.strip()
@@ -120,7 +120,7 @@ async def collect_last_name_handler(message: Message) -> None:
 
 @dp.message_handler(UserStateFilter(UserState.COLLECTING_PHONE))
 async def collect_phone_handler(message: Message) -> None:
-    with enrich_logs('collect_phone', message):
+    with enrich_logs("collect_phone", message):
         logger.info("COLLECTING_PHONE")
 
         phone = PhoneParser(message.text).parse()
@@ -149,7 +149,7 @@ async def collect_phone_handler(message: Message) -> None:
 
 @dp.message_handler(UserStateFilter(UserState.COLLECTING_RTSF_URL))
 async def collect_rtsf_url_handler(message: Message) -> None:
-    with enrich_logs('collect_rtsf_url', message):
+    with enrich_logs("collect_rtsf_url", message):
         logger.info("COLLECTING_RTSF_URL")
 
         try:
@@ -187,16 +187,16 @@ async def collect_rtsf_url_handler(message: Message) -> None:
 
 @dp.message_handler(UserStateFilter(UserState.IN_REVIEW))
 async def in_review_handler(message: Message) -> None:
-    with enrich_logs('in_review', message):
+    with enrich_logs("in_review", message):
         logger.info("IN_REVIEW_STATUS_POLLED")
         await message.answer(text="Ваша заявка на проверке. Ждите результатов.")
 
 
 @dp.errors_handler(exception=Exception)
 async def exception_handler(update: Update, exception: Exception) -> None:
-    with enrich_logs('exception', update.message):
+    with enrich_logs("exception", update.message):
         logger.context_push(update=update.as_json())
-        logger.info('EXCEPTION_FALLBACK_HANDLER')
+        logger.info("EXCEPTION_FALLBACK_HANDLER")
         default_msg = "Произошла неизвестная ошибка. Обратитесь к оргинизаторам."
         msg = {
             PhoneParseError: (
@@ -215,9 +215,9 @@ async def exception_handler(update: Update, exception: Exception) -> None:
                 "оргинизаторам или попробуйте снова."
             ),
             EvksPlayerAlreadyRegistered: (
-                f"Участник рейтинга уже зарегистирирован. "
+                "Участник рейтинга уже зарегистирирован. "
                 "Пожалуйста, обратитесь к организаторам."
-            )
+            ),
         }.get(type(exception), default_msg)
         await update.message.answer(msg)
         return True

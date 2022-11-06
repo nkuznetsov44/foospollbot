@@ -5,7 +5,7 @@ from log4mongo.handlers import MongoHandler
 from settings import settings
 
 
-LOGGER_NAME = 'app'
+LOGGER_NAME = "app"
 
 
 class ContextLoggerAdapter(logging.LoggerAdapter):
@@ -36,7 +36,9 @@ class ContextLoggerAdapter(logging.LoggerAdapter):
 
 def setup_logger():
     stream_handler = logging.StreamHandler()
-    formatter = logging.Formatter(fmt="%(asctime)s - %(levelname)s - %(module)s - %(message)s - %(context)s")
+    formatter = logging.Formatter(
+        fmt="%(asctime)s - %(levelname)s - %(module)s - %(message)s - %(context)s"
+    )
     stream_handler.setFormatter(formatter)
 
     mongo_handler = MongoHandler(

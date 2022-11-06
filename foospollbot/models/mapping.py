@@ -1,4 +1,4 @@
-from sqlalchemy.orm import registry, relationship
+from sqlalchemy.orm import registry
 from models.tables import (
     telegram_users,
     evks_players,
