@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import UUID
 from models.entities import UserState
 
 
@@ -41,9 +42,8 @@ user_infos = sa.Table(
     sa.Column("last_name", sa.String, nullable=True),
     sa.Column("phone", sa.String, nullable=True),
     sa.Column("rtsf_url", sa.String, nullable=True),
-    sa.Column(
-        "evks_player_id", sa.Integer, sa.ForeignKey("evks_players.id"), unique=True
-    ),
+    sa.Column("evks_player_id", sa.Integer, sa.ForeignKey("evks_players.id")),
+    sa.Column("photo_id", UUID(as_uuid=True), nullable=True),
     sa.Column("state", sa.Enum(UserState)),
     sa.Column("created", sa.DateTime, server_default=func.now()),
     sa.Column("updated", sa.DateTime, onupdate=func.now()),

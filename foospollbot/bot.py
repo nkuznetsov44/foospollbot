@@ -1,15 +1,15 @@
 from contextlib import contextmanager
-from aiogram.types.message import Message
+from uuid import uuid4
+from aiogram.types.message import Message, ContentType
 from aiogram.types.update import Update
-from sqlalchemy.exc import IntegrityError
 
 from app import dp, storage, start_app
+from settings import settings
 from models.entities import TelegramUser, UserInfo, UserState
 from filters import NewUserFilter, UserStateFilter
 from state_machine import UserStateMachine
 from parsers import PhoneParser, RtsfUrlParser
 from exceptions import (
-    EvksPlayerAlreadyRegistered,
     EvksPlayerDoesNotExist,
     PhoneParseError,
     RtsfUrlParseError,
@@ -19,6 +19,9 @@ from logger import get_logger
 
 
 logger = get_logger()
+
+PHOTO_STORAGE_PATH = settings["photo_storage_path"]
+ORG_TELEGRAM_USER = settings["org_telegram_user"]
 
 
 @contextmanager
@@ -87,7 +90,6 @@ async def collect_first_name_handler(message: Message) -> None:
             await session.commit()
 
         logger.info("SAVED_FIRST_NAME")
-
         await message.answer(text="Сообщите свою фамилию")
 
 
@@ -114,7 +116,6 @@ async def collect_last_name_handler(message: Message) -> None:
             await session.commit()
 
         logger.info("SAVED_LAST_NAME")
-
         await message.answer(text="Сообщите номер телефона")
 
 
@@ -141,7 +142,6 @@ async def collect_phone_handler(message: Message) -> None:
             await session.commit()
 
         logger.info("SAVED_PHONE")
-
         await message.answer(
             text="Пришлите ссылку на свой рейтинг на https://rtsf.ru/ratings"
         )
@@ -152,37 +152,79 @@ async def collect_rtsf_url_handler(message: Message) -> None:
     with enrich_logs("collect_rtsf_url", message):
         logger.info("COLLECTING_RTSF_URL")
 
-        try:
-            parsed_url = RtsfUrlParser(message.text).parse()
-            async with storage.session() as session:
-                user_info = await storage.get_user_info(
-                    session=session,
-                    telegram_user_id=message.from_user.id,
-                    for_update=True,
-                )
-                evks_player = await storage.get_evks_player(
-                    session, parsed_url.evks_player_id
-                )
-                user_sm = UserStateMachine(user_info.state)
-
-                user_info.rtsf_url = parsed_url.url
-                user_info.evks_player = evks_player
-                user_sm.next()
-                user_info.state = user_sm.state
-
-                session.add(user_info)
-                await session.commit()
-
-            logger.info("Application completed")
-            await message.answer(
-                text="Заявка создана. Она будет проверена вручную. Ждите результатов."
+        parsed_url = RtsfUrlParser(message.text).parse()
+        async with storage.session() as session:
+            user_info = await storage.get_user_info(
+                session=session,
+                telegram_user_id=message.from_user.id,
+                for_update=True,
             )
-        except IntegrityError as e:
-            raise EvksPlayerAlreadyRegistered(
-                evks_player_id=parsed_url.evks_player_id
-            ) from e
+            evks_player = await storage.get_evks_player(
+                session, parsed_url.evks_player_id
+            )
+            user_sm = UserStateMachine(user_info.state)
+
+            user_info.rtsf_url = parsed_url.url
+            user_info.evks_player_id = evks_player.id
+            user_sm.next()
+            user_info.state = user_sm.state
+
+            session.add(user_info)
+            await session.commit()
 
         logger.info("SAVED_RTSF_URL")
+        await message.answer(
+            text=(
+                "Мы очень хотим избежать фрода в голосовании, поэтому вынуждены "
+                "попросить вас прислать селфи. Это последний этап регистрации."
+            )
+        )
+
+
+@dp.message_handler(
+    UserStateFilter(UserState.COLLECTING_PHOTO),
+    content_types=(ContentType.TEXT,),
+)
+async def collect_photo_no_content_handler(message: Message) -> None:
+    with enrich_logs('collect_photo_no_content', message):
+        logger.info("NO_PHOTO_FOUND_IN_MESSAGE")
+        await message.answer(text="Сообщение должно содержать фотографию.")
+
+
+@dp.message_handler(
+    UserStateFilter(UserState.COLLECTING_PHOTO),
+    content_types=(ContentType.PHOTO,),
+)
+async def collect_photo_handler(message: Message) -> None:
+    with enrich_logs("collect_photo", message):
+        logger.info("COLLECTING_PHOTO")
+
+        photo_id = uuid4()
+        await message.photo[-1].download(destination_file=f"{PHOTO_STORAGE_PATH}/{photo_id}.jpg")
+
+        async with storage.session() as session:
+            user_info = await storage.get_user_info(
+                session=session,
+                telegram_user_id=message.from_user.id,
+                for_update=True,
+            )
+            user_sm = UserStateMachine(user_info.state)
+            user_info.photo_id = photo_id
+            user_sm.next()
+            user_info.state = user_sm.state
+            session.add(user_info)
+            await session.commit()
+
+        logger.context_push(photo_id=str(photo_id))
+        logger.info("SAVED_PHOTO")
+
+        await message.answer(
+            text=(
+                "Ваша заявка принята и будет рассмотрена вручную. Пожалуйста, "
+                "не удаляйте этот чат. Когда придет время, бот пришлет вам опрос "
+                f"для голосования. Если будут вопросы, пишите @{ORG_TELEGRAM_USER}"
+            )
+        )
 
 
 @dp.message_handler(UserStateFilter(UserState.IN_REVIEW))
@@ -195,30 +237,35 @@ async def in_review_handler(message: Message) -> None:
 @dp.errors_handler(exception=Exception)
 async def exception_handler(update: Update, exception: Exception) -> None:
     with enrich_logs("exception", update.message):
-        logger.context_push(update=update.as_json())
+        logger.context_push(
+            update=update.as_json(),
+            error=str(exception),
+        )
         logger.info("EXCEPTION_FALLBACK_HANDLER")
-        default_msg = "Произошла неизвестная ошибка. Обратитесь к оргинизаторам."
         msg = {
             PhoneParseError: (
                 "Не удалось сохранить номер телефона. "
-                "Если вы уверены, что все правильно, "
-                "обратитесь к оргинизаторам. Или попробуйте снова."
+                "Если вы уверены, что указали все правильно, "
+                f"обратитесь к оргинизаторам @{ORG_TELEGRAM_USER} "
+                "или попробуйте снова."
             ),
             RtsfUrlParseError: (
                 "Ссылка на рейтинг невалидная. "
                 "Она должна вести на профиль игрока, "
-                "например https://rtsf.ru/ratings/player/175. Попробуйте снова."
+                "например https://rtsf.ru/ratings/player/175. "
+                f"Обратитесь к оргинизаторам @{ORG_TELEGRAM_USER} "
+                "или попробуйте снова."
             ),
             EvksPlayerDoesNotExist: (
-                "Ссылка на рейтинг указывает на несуществующего игрока "
-                ". Если вы уверены, что все правильно, обратитесь к "
-                "оргинизаторам или попробуйте снова."
+                "Ссылка на рейтинг указывает на несуществующего игрока. "
+                "Если вы уверены, что указали все правильно, "
+                f"обратитесь к оргинизаторам @{ORG_TELEGRAM_USER} "
+                "или попробуйте снова."
             ),
-            EvksPlayerAlreadyRegistered: (
-                "Участник рейтинга уже зарегистирирован. "
-                "Пожалуйста, обратитесь к организаторам."
-            ),
-        }.get(type(exception), default_msg)
+        }.get(type(exception))
+        if not msg:
+            logger.exception("UNEXPECTED_ERROR")
+            msg = "Произошла неизвестная ошибка. Обратитесь к оргинизаторам."
         await update.message.answer(msg)
         return True
 

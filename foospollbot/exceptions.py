@@ -33,17 +33,6 @@ class EvksPlayerDoesNotExist(ErrorWithParams):
         return self.params["evks_player_id"]
 
 
-class EvksPlayerAlreadyRegistered(ErrorWithParams):
-    reason = "EVKS_PLAYER_ALREADY_REGISTERED"
-
-    def __init__(self, evks_player_id: int) -> None:
-        super().__init__(params=dict(evks_player_id=evks_player_id))
-
-    @property
-    def evks_player_id(self) -> int:
-        return self.params["evks_player_id"]
-
-
 class ParseError(ErrorWithParams):
     reason = "PARSE_ERROR"
 

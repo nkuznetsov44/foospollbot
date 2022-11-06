@@ -21,6 +21,11 @@ _transitions = [
     {
         "trigger": "next",
         "source": UserState.COLLECTING_RTSF_URL,
+        "dest": UserState.COLLECTING_PHOTO,
+    },
+    {
+        "trigger": "next",
+        "source": UserState.COLLECTING_PHOTO,
         "dest": UserState.IN_REVIEW,
     },
     {

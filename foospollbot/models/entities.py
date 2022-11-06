@@ -1,4 +1,5 @@
 from typing import Optional
+from uuid import UUID
 from datetime import date, datetime
 from dataclasses import dataclass, field
 from enum import Enum, unique
@@ -7,7 +8,6 @@ from enum import Enum, unique
 @dataclass
 class EvksPlayer:
     id: int
-    evks_player_id: int
     first_name: str
     last_name: str
     foreigner: bool
@@ -23,6 +23,7 @@ class UserState(Enum):
     COLLECTING_LAST_NAME = "collecting_last_name"
     COLLECTING_PHONE = "collecting_phone"
     COLLECTING_RTSF_URL = "collecting_rtsf_url"
+    COLLECTING_PHOTO = "collecting_photo"
     IN_REVIEW = "in_review"
     ACCEPTED = "accepted"
     REJECTED = "rejected"
@@ -41,6 +42,7 @@ class UserInfo:
     phone: Optional[str] = None
     rtsf_url: Optional[str] = None
     evks_player_id: Optional[int] = None
+    photo_id: Optional[UUID] = None
 
     created: Optional[datetime] = field(init=False)
     updated: Optional[datetime] = field(init=False)

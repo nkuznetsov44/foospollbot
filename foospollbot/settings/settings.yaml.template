@@ -15,3 +15,5 @@ webhook_url: mywebhookurl
 webhook_path: /
 host: localhost
 port: 8080
+photo_storage_path: /path/to/storage
+org_telegram_user: telegramuser
