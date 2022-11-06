@@ -40,7 +40,7 @@ class UserInfo:
     last_name: Optional[str] = None
     phone: Optional[str] = None
     rtsf_url: Optional[str] = None
-    evks_player: Optional[EvksPlayer] = None
+    evks_player_id: Optional[int] = None
 
     created: Optional[datetime] = field(init=False)
     updated: Optional[datetime] = field(init=False)
@@ -53,8 +53,6 @@ class TelegramUser:
     last_name: Optional[str]
     username: Optional[str]
 
-    user_info: UserInfo
-
 
 @dataclass
 class VoteOption:
@@ -65,8 +63,8 @@ class VoteOption:
 @dataclass(frozen=True)
 class VoteResult:
     id: int
-    telegram_user: TelegramUser
-    selected_option: VoteOption
+    telegram_user_id: int
+    selected_option_id: int
     secret_code: str
 
     created: Optional[datetime] = field(init=False)

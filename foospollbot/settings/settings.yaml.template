@@ -4,7 +4,12 @@ db:
   database: mydatabasename
   host: localhost
   port: 5432
-log_level: DEBUG
+mongo_logs:
+  host: localhost
+  port: 27017
+  user: root
+  password: example
+log_level: INFO
 telegram_token: mysecretbottoken
 webhook_url: mywebhookurl
 webhook_path: /

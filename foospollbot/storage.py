@@ -4,9 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload
 
-from models.entities import EvksPlayer, TelegramUser
+from models.entities import EvksPlayer, TelegramUser, UserInfo
 from exceptions import EvksPlayerDoesNotExist, TelegramUserDoesNotExist
 
 
@@ -25,12 +24,11 @@ class Storage:
         async with self._sessionmaker()() as session:
             yield session
 
-    async def get_telegram_user_by_id(
+    async def get_telegram_user(
         self, session: AsyncSession, telegram_user_id: int
     ) -> TelegramUser:
         result = await session.execute(
             select(TelegramUser)
-            .options(joinedload(TelegramUser.user_info))
             .where(TelegramUser.id == telegram_user_id)
         )
         try:
@@ -38,7 +36,23 @@ class Storage:
         except NoResultFound as e:
             raise TelegramUserDoesNotExist(telegram_user_id=telegram_user_id) from e
 
-    async def get_evks_player_by_id(
+    async def get_user_info(
+        self, session: AsyncSession, telegram_user_id: int, for_update: bool = False
+    ) -> UserInfo:
+        stmt = (
+            select(UserInfo)
+            .where(UserInfo.telegram_user_id == telegram_user_id)
+        )
+        if for_update:
+            stmt = stmt.with_for_update()
+
+        result = await session.execute(statement=stmt)
+        try:
+            return result.one()[0]
+        except NoResultFound as e:
+            raise TelegramUserDoesNotExist(telegram_user_id=telegram_user_id) from e
+
+    async def get_evks_player(
         self, session: AsyncSession, evks_player_id: int
     ) -> EvksPlayer:
         result = await session.execute(

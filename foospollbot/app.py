@@ -1,5 +1,3 @@
-import logging
-from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher import Dispatcher
 from aiogram.bot import Bot
 from aiogram.utils.executor import start_webhook
@@ -7,21 +5,21 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from settings import settings
 from storage import Storage
 from models.mapping import mapper_registry
+from logger import get_logger, setup_logger, LoggingMiddlewareAdapter
 
-
-level = logging.getLevelName(settings["log_level"])
-logging.basicConfig(level=level)
 
 bot = Bot(token=settings["telegram_token"])
 dp = Dispatcher(bot)
-dp.middleware.setup(LoggingMiddleware())
+setup_logger()
+logger = get_logger()
+dp.middleware.setup(LoggingMiddlewareAdapter(logger=logger))
 
 connection_string = (
     "postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}".format(
         **settings["db"]
     )
 )
-engine = create_async_engine(connection_string, echo=True)
+engine = create_async_engine(connection_string)
 mapper_registry.configure()
 storage = Storage()
 storage.setup_db_engine(engine)
