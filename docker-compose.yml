@@ -22,16 +22,6 @@ services:
       - mongo
     ports:
       - 8080:8080
-  mongo:
-    image: mongo
-    restart: unless-stopped
-  mongo-express:
-    image: mongo-express
-    restart: unless-stopped
-    ports:
-      - 8081:8081
-    environment:
-      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
 volumes:
   postgresdata:
   photostorage:
