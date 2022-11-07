@@ -17,3 +17,4 @@ host: localhost
 port: 8080
 photo_storage_path: /path/to/storage
 org_telegram_user: telegramuser
+admin_chat_id: -812612664

@@ -1,9 +1,13 @@
 from contextlib import contextmanager
 from uuid import uuid4
-from aiogram.types.message import Message, ContentType
+from aiogram.types.message import Message
 from aiogram.types.update import Update
+from aiogram.types.callback_query import CallbackQuery
+from aiogram.types import ContentType, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.dispatcher.filters.builtin import IDFilter
+from aiogram.utils.callback_data import CallbackData
 
-from app import dp, storage, start_app
+from app import bot, dp, storage, start_app
 from settings import settings
 from models.entities import TelegramUser, UserInfo, UserState
 from filters import NewUserFilter, UserStateFilter
@@ -22,6 +26,11 @@ logger = get_logger()
 
 PHOTO_STORAGE_PATH = settings["photo_storage_path"]
 ORG_TELEGRAM_USER = settings["org_telegram_user"]
+ADMIN_CHAT_ID = settings["admin_chat_id"]
+
+
+ApproveCallback = CallbackData("APPROVE", "telegram_user_id")
+RejectCallback = CallbackData("REJECT", "telegram_user_id")
 
 
 @contextmanager
@@ -33,6 +42,69 @@ def enrich_logs(handler_name: str, message: Message) -> None:
             message=message.text,
         )
         yield
+
+
+@dp.message_handler(IDFilter(chat_id=ADMIN_CHAT_ID))
+async def admin_handler(message: Message) -> None:
+    pass
+
+
+@dp.callback_query_handler(IDFilter(chat_id=ADMIN_CHAT_ID), ApproveCallback.filter())
+async def approve_handler(callback: CallbackQuery, callback_data: dict[str, str]) -> None:
+    with logger:
+        logger.context_push(
+            handler="approve_handler",
+            callback_data=callback_data,
+            from_user=callback.from_user.as_json(),
+        )
+        logger.info("APPROVE_USER_REQUEST")
+
+        telegram_user_id = int(callback_data["telegram_user_id"])
+        async with storage.session() as session:
+            user_info = await storage.get_user_info(
+                session=session,
+                telegram_user_id=telegram_user_id,
+                for_update=True,
+            )
+            user_sm = UserStateMachine(user_info.state)
+            user_sm.approve(user_info)
+            user_info.state = user_sm.state
+            session.add(user_info)
+            await session.commit()
+
+        logger.info("APPROVED_USER")
+
+        await callback.message.edit_reply_markup(reply_markup=None)
+        await callback.message.reply(text=f"Approved by @{callback.from_user.username}")
+
+
+@dp.callback_query_handler(IDFilter(chat_id=ADMIN_CHAT_ID), RejectCallback.filter())
+async def reject_handler(callback: CallbackQuery, callback_data: dict[str, str]) -> None:
+    with logger:
+        logger.context_push(
+            handler="approve_handler",
+            callback_data=callback_data,
+            from_user=callback.from_user.as_json(),
+        )
+        logger.info("REJECT_USER_REQUEST")
+
+        telegram_user_id = int(callback_data["telegram_user_id"])
+        async with storage.session() as session:
+            user_info = await storage.get_user_info(
+                session=session,
+                telegram_user_id=telegram_user_id,
+                for_update=True,
+            )
+            user_sm = UserStateMachine(user_info.state)
+            user_sm.reject(user_info)
+            user_info.state = user_sm.state
+            session.add(user_info)
+            await session.commit()
+
+        logger.info("REJECTED_USER")
+
+        await callback.message.edit_reply_markup(reply_markup=None)
+        await callback.message.reply(text=f"Rejected by @{callback.from_user.username}")
 
 
 @dp.message_handler(NewUserFilter())
@@ -226,17 +298,53 @@ async def collect_photo_handler(message: Message) -> None:
             )
         )
 
+        await notify_admins_review(message.from_user.id)
+        logger.info("REVIEW_NOTIFICATION_SENT")
+
+
+async def notify_admins_review(telegram_user_id: int) -> None:
+    async with storage.session() as session:
+        telegram_user = await storage.get_telegram_user(session, telegram_user_id)
+        user_info = await storage.get_user_info(session, telegram_user_id)
+        evks_player = await storage.get_evks_player(session, user_info.evks_player_id)
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=(
+                [InlineKeyboardButton(
+                    text="Approve",
+                    callback_data=ApproveCallback.new(telegram_user_id=telegram_user_id),
+                )],
+                [InlineKeyboardButton(
+                    text="Reject",
+                    callback_data=RejectCallback.new(telegram_user_id=telegram_user_id),
+                )],
+            )
+        )
+        with open(f"{PHOTO_STORAGE_PATH}/{user_info.photo_id}.jpg", "rb") as photo:
+            await bot.send_photo(
+                chat_id=ADMIN_CHAT_ID,
+                photo=photo,
+                caption=(
+                    f"Telegram info: @{telegram_user.username} ({telegram_user.first_name} {telegram_user.last_name})\n"
+                    f"Real name: {user_info.last_name} {user_info.first_name}\n"
+                    f"Phone: {user_info.phone}\n"
+                    f"EVKS: {evks_player.last_name} {evks_player.first_name} {user_info.rtsf_url}\n"
+                    f"Last competition: {evks_player.last_competition_date}"
+                ),
+                reply_markup=keyboard,
+            )
+
 
 @dp.message_handler(UserStateFilter(UserState.IN_REVIEW))
 async def in_review_handler(message: Message) -> None:
     with enrich_logs("in_review", message):
         logger.info("IN_REVIEW_STATUS_POLLED")
         await message.answer(text="Ваша заявка на проверке. Ждите результатов.")
+        await notify_admins_review(message.from_user.id)  # FIXME: remove
 
 
 @dp.errors_handler(exception=Exception)
 async def exception_handler(update: Update, exception: Exception) -> None:
-    with enrich_logs("exception", update.message):
+    with logger:
         logger.context_push(
             update=update.as_json(),
             error=str(exception),

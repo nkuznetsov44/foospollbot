@@ -1,5 +1,5 @@
 from transitions import Machine
-from models.entities import TelegramUser, UserState
+from models.entities import UserInfo, UserState
 
 
 _transitions = [
@@ -29,7 +29,7 @@ _transitions = [
         "dest": UserState.IN_REVIEW,
     },
     {
-        "trigger": "accept",
+        "trigger": "approve",
         "source": UserState.IN_REVIEW,
         "dest": UserState.ACCEPTED,
         "conditions": "has_full_info",
@@ -53,11 +53,12 @@ class UserStateMachine:
     def get_initial_state() -> UserState:
         return UserState.COLLECTING_FIRST_NAME
 
-    def has_full_info(self, telegram_user: TelegramUser) -> bool:
-        return all(
-            telegram_user.user_info.first_name is not None,
-            telegram_user.user_info.last_name is not None,
-            telegram_user.user_info.phone is not None,
-            telegram_user.user_info.rtsf_url is not None,
-            telegram_user.user_info.evks_player is not None,
-        )
+    def has_full_info(self, user_info: UserInfo) -> bool:
+        return all((
+            user_info.first_name is not None,
+            user_info.last_name is not None,
+            user_info.phone is not None,
+            user_info.rtsf_url is not None,
+            user_info.evks_player_id is not None,
+            user_info.photo_id is not None,
+        ))
