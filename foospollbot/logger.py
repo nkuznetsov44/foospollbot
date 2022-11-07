@@ -41,16 +41,16 @@ def setup_logger():
     )
     stream_handler.setFormatter(formatter)
 
-    mongo_handler = MongoHandler(
-        host=settings["mongo_logs"]["host"],
-        port=settings["mongo_logs"]["port"],
-    )
+    #mongo_handler = MongoHandler(
+    #    host=settings["mongo_logs"]["host"],
+    #    port=settings["mongo_logs"]["port"],
+    #)
 
     level = logging.getLevelName(settings["log_level"])
     logger = logging.getLogger(LOGGER_NAME)
     logger.setLevel(level)
     logger.addHandler(stream_handler)
-    logger.addHandler(mongo_handler)
+    #logger.addHandler(mongo_handler)
 
 
 def get_logger() -> ContextLoggerAdapter:
