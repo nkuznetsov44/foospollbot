@@ -13,7 +13,7 @@ log_level: INFO
 telegram_token: mysecretbottoken
 webhook_url: mywebhookurl
 webhook_path: /
-host: localhost
+host: 0.0.0.0
 port: 8080
 photo_storage_path: /path/to/storage
 org_telegram_user: telegramuser

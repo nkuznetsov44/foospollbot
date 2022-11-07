@@ -1,13 +1,30 @@
 version: '3.1'
 
 services:
-
+  postgres:
+    image: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: foospoll
+      POSTGRES_PASSWORD: foospoll
+      POSTGRES_DB: foospoll
+    volumes:
+      - postgresdata:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    ports:
+      - 7432:5432
+  bot:
+    build: .
+    volumes:
+      - photostorage:/opt/photostorage
+    depends_on:
+      - postgres
+      - mongo
+    ports:
+      - 8080:8080
   mongo:
     image: mongo
     restart: unless-stopped
-    ports:
-      - 27017:27017
-
   mongo-express:
     image: mongo-express
     restart: unless-stopped
@@ -15,3 +32,6 @@ services:
       - 8081:8081
     environment:
       ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
+volumes:
+  postgresdata:
+  photostorage:
