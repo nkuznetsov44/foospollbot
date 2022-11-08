@@ -74,6 +74,9 @@ async def approve_handler(callback: CallbackQuery, callback_data: dict[str, str]
 
         logger.info("APPROVED_USER")
 
+        await notify_approved(telegram_user_id)
+        logger.info("APPROVE_NOTIFICATION_SENT")
+
         await callback.message.edit_reply_markup(reply_markup=None)
         await callback.message.reply(text=f"Approved by @{callback.from_user.username}")
 
@@ -334,12 +337,21 @@ async def notify_admins_review(telegram_user_id: int) -> None:
             )
 
 
+async def notify_approved(telegram_user_id: int) -> None:
+    await bot.send_message(
+        chat_id=telegram_user_id,
+        text=(
+            "Ваша заявка одобрена. Пожалуйста, не удаляйте этот чат. "
+            "Когда наступит время голосования вам придет опрос."
+        )
+    )
+
+
 @dp.message_handler(UserStateFilter(UserState.IN_REVIEW))
 async def in_review_handler(message: Message) -> None:
     with enrich_logs("in_review", message):
         logger.info("IN_REVIEW_STATUS_POLLED")
         await message.answer(text="Ваша заявка на проверке. Ждите результатов.")
-        await notify_admins_review(message.from_user.id)  # FIXME: remove
 
 
 @dp.errors_handler(exception=Exception)
