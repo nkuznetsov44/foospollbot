@@ -33,6 +33,13 @@ class EvksPlayerDoesNotExist(ErrorWithParams):
         return self.params["evks_player_id"]
 
 
+class UserStateMachineError(ErrorWithParams):
+    reason = "USER_STATE_MACHINE_ERROR"
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message=message)
+
+
 class ParseError(ErrorWithParams):
     reason = "PARSE_ERROR"
 

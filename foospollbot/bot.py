@@ -6,6 +6,7 @@ from aiogram.types.callback_query import CallbackQuery
 from aiogram.types import ContentType, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.dispatcher.filters.builtin import IDFilter
 from aiogram.utils.callback_data import CallbackData
+from transitions import MachineError
 
 from app import bot, dp, storage, start_app
 from settings import settings
@@ -18,6 +19,7 @@ from exceptions import (
     PhoneParseError,
     RtsfUrlParseError,
     TelegramUserDoesNotExist,
+    UserStateMachineError,
 )
 from logger import get_logger
 
@@ -59,26 +61,30 @@ async def approve_handler(callback: CallbackQuery, callback_data: dict[str, str]
         )
         logger.info("APPROVE_USER_REQUEST")
 
-        telegram_user_id = int(callback_data["telegram_user_id"])
-        async with storage.session() as session:
-            user_info = await storage.get_user_info(
-                session=session,
-                telegram_user_id=telegram_user_id,
-                for_update=True,
-            )
-            user_sm = UserStateMachine(user_info.state)
-            user_sm.approve(user_info)
-            user_info.state = user_sm.state
-            session.add(user_info)
-            await session.commit()
+        try:
+            telegram_user_id = int(callback_data["telegram_user_id"])
+            async with storage.session() as session:
+                user_info = await storage.get_user_info(
+                    session=session,
+                    telegram_user_id=telegram_user_id,
+                    for_update=True,
+                )
+                user_sm = UserStateMachine(user_info.state)
+                user_sm.approve(user_info)
+                user_info.state = user_sm.state
+                session.add(user_info)
+                await session.commit()
 
-        logger.info("APPROVED_USER")
+            logger.info("APPROVED_USER")
 
-        await notify_approved(telegram_user_id)
-        logger.info("APPROVE_NOTIFICATION_SENT")
+            await notify_approved(telegram_user_id)
+            logger.info("APPROVE_NOTIFICATION_SENT")
 
-        await callback.message.edit_reply_markup(reply_markup=None)
-        await callback.message.reply(text=f"Approved by @{callback.from_user.username}")
+            await callback.message.reply(text=f"Approved by @{callback.from_user.username}")
+        except MachineError as me:
+            raise UserStateMachineError(message=me.value)
+        finally:
+            await callback.message.edit_reply_markup(reply_markup=None)
 
 
 @dp.callback_query_handler(IDFilter(chat_id=ADMIN_CHAT_ID), RejectCallback.filter())
@@ -382,11 +388,22 @@ async def exception_handler(update: Update, exception: Exception) -> None:
                 f"обратитесь к оргинизаторам @{ORG_TELEGRAM_USER} "
                 "или попробуйте снова."
             ),
+            UserStateMachineError: {
+                f"Ошибка обновления состояния:\n{exception}"
+            },
         }.get(type(exception))
+
         if not msg:
             logger.exception("UNEXPECTED_ERROR")
             msg = "Произошла неизвестная ошибка. Обратитесь к оргинизаторам."
-        await update.message.answer(msg)
+
+        if update.message:
+            await update.message.answer(msg)
+        elif update.callback_query:
+            await update.callback_query.message.answer(msg)
+        else:
+            logger.error(f"UNSUPPORTED_MESSAGE_TYPE")
+
         return True
 
 
