@@ -54,11 +54,13 @@ class UserStateMachine:
         return UserState.COLLECTING_FIRST_NAME
 
     def has_full_info(self, user_info: UserInfo) -> bool:
-        return all((
-            user_info.first_name is not None,
-            user_info.last_name is not None,
-            user_info.phone is not None,
-            user_info.rtsf_url is not None,
-            user_info.evks_player_id is not None,
-            user_info.photo_id is not None,
-        ))
+        return all(
+            (
+                user_info.first_name is not None,
+                user_info.last_name is not None,
+                user_info.phone is not None,
+                user_info.rtsf_url is not None,
+                user_info.evks_player_id is not None,
+                user_info.photo_id is not None,
+            )
+        )

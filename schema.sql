@@ -85,7 +85,7 @@ ALTER SEQUENCE public.evks_players_id_seq OWNED BY public.evks_players.id;
 --
 
 CREATE TABLE public.telegram_users (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     first_name character varying,
     last_name character varying,
     username character varying
@@ -122,7 +122,7 @@ ALTER SEQUENCE public.telegram_users_id_seq OWNED BY public.telegram_users.id;
 
 CREATE TABLE public.user_infos (
     id integer NOT NULL,
-    telegram_user_id integer,
+    bigint integer,
     first_name character varying,
     last_name character varying,
     phone character varying,

@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import select
 
-from models.entities import EvksPlayer, TelegramUser, UserInfo
+from models.entities import EvksPlayer, TelegramUser, UserInfo, UserState, VoteOption
 from exceptions import EvksPlayerDoesNotExist, TelegramUserDoesNotExist
 
 
@@ -58,3 +58,23 @@ class Storage:
             return result.one()[0]
         except NoResultFound as e:
             raise EvksPlayerDoesNotExist(evks_player_id=evks_player_id) from e
+
+    async def get_accepted_users(self, session: AsyncSession) -> list[int]:
+        result = await session.execute(
+            select(UserInfo.telegram_user_id).where(
+                UserInfo.state == UserState.ACCEPTED
+            )
+        )
+        return result.scalars().all()
+
+    async def get_vote_options(self, session: AsyncSession) -> list[VoteOption]:
+        result = await session.execute(select(VoteOption))
+        return result.scalars().all()
+
+    async def get_vote_option(
+        self, session: AsyncSession, option_id: int
+    ) -> VoteOption:
+        result = await session.execute(
+            select(VoteOption).where(VoteOption.id == option_id)
+        )
+        return result.one()[0]

@@ -62,7 +62,7 @@ class VoteOption:
     text: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class VoteResult:
     id: int
     telegram_user_id: int

@@ -61,8 +61,8 @@ if __name__ == "__main__":
         echo=True,
     )
 
-    #create_schema(engine)
-    #print("Created schema")
+    # create_schema(engine)
+    # print("Created schema")
 
     insert_evks_players(engine)
     print("Inserted evks players")

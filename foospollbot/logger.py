@@ -1,7 +1,6 @@
 from typing import Any
 import logging
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
-from log4mongo.handlers import MongoHandler
 from settings import settings
 
 
@@ -41,16 +40,16 @@ def setup_logger():
     )
     stream_handler.setFormatter(formatter)
 
-    #mongo_handler = MongoHandler(
+    # mongo_handler = MongoHandler(
     #    host=settings["mongo_logs"]["host"],
     #    port=settings["mongo_logs"]["port"],
-    #)
+    # )
 
     level = logging.getLevelName(settings["log_level"])
     logger = logging.getLogger(LOGGER_NAME)
     logger.setLevel(level)
     logger.addHandler(stream_handler)
-    #logger.addHandler(mongo_handler)
+    # logger.addHandler(mongo_handler)
 
 
 def get_logger() -> ContextLoggerAdapter:
