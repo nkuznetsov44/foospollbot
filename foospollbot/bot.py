@@ -102,7 +102,7 @@ async def admin_handler_info(message: Message) -> None:
             text += f"{option}: {count}\n"
 
         await message.answer(
-            text=text,
+            text=text.replace("_", "\\_"),
             parse_mode=ParseMode.MARKDOWN_V2,
         )
 
@@ -162,7 +162,7 @@ async def vote_result_handler(
             await bot.send_message(
                 chat_id=callback.from_user.id,
                 text=(
-                    f"Ваш голос за кандидата *{selected_option.text}* учтен\.\n"
+                    f"Ваш голос за кандидата *{selected_option.text}* учтен.\n"
                     f"`{secret_code}`\n"
                     "это ваш уникальный код. Не показывайте его никому, "
                     "его знаете только вы, он обеспечивает анонимность и "
@@ -171,7 +171,6 @@ async def vote_result_handler(
                     "которые выбрали владельцы кода. Так вы сможете убедиться, "
                     "что ваш голос не потерялся и был учтен правильно."
                 )
-                .replace("_", "\\_")
                 .replace(".", "\\."),
                 parse_mode=ParseMode.MARKDOWN_V2,
             )
