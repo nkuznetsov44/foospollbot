@@ -36,7 +36,7 @@ class RtsfUrlParser(BaseParser):
 
 
 class PhoneParser(BaseParser):
-    phone_re = re.compile(r"^(\+7|8)\d{10}$")
+    phone_re = re.compile(r"^(\+7|7|8)\d{10}$")
 
     def parse(self) -> str:
         phone = (
@@ -53,7 +53,7 @@ class PhoneParser(BaseParser):
         return self._format_phone(phone_match.group())
 
     def _format_phone(self, parsed_phone: str) -> str:
-        if parsed_phone.startswith("8"):
+        if parsed_phone.startswith("7") or parsed_phone.startswith("8"):
             phone = parsed_phone[1:]
         else:
             phone = parsed_phone[2:]
