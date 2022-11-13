@@ -5,9 +5,15 @@ import secrets
 from aiogram.types.message import Message
 from aiogram.types.update import Update
 from aiogram.types.callback_query import CallbackQuery
-from aiogram.types import ContentType, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import (
+    ContentType,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    ParseMode,
+)
 from aiogram.dispatcher.filters.builtin import IDFilter, Text
 from aiogram.utils.callback_data import CallbackData
+from aiogram.utils.exceptions import MessageNotModified
 from transitions import MachineError
 
 from app import bot, dp, storage, start_app
@@ -51,7 +57,7 @@ class PollSender(AbstractPollSender):
 
 def generate_secret_code(len: int = 8) -> str:
     alphabet = string.ascii_letters + string.digits
-    return "".join(secrets.choice(alphabet) for i in range(len)).upper()
+    return "".join(secrets.choice(alphabet) for _ in range(len)).upper()
 
 
 @contextmanager
@@ -69,7 +75,7 @@ def enrich_logs(handler_name: str, message: Message) -> None:
     IDFilter(chat_id=ADMIN_CHAT_ID),
     Text(equals="/startvote"),
 )
-async def admin_handler(message: Message) -> None:
+async def admin_handler_startvote(message: Message) -> None:
     async with storage.session() as session:
         user_ids = await storage.get_accepted_users(session)
         vote_options = await storage.get_vote_options(session)
@@ -78,6 +84,27 @@ async def admin_handler(message: Message) -> None:
     await message.answer("Началась отправка опросов")
     await sender.send()
     await message.answer("Отправка опросов закончена")
+
+
+@dp.message_handler(
+    IDFilter(chat_id=ADMIN_CHAT_ID),
+    Text(equals="/info"),
+)
+async def admin_handler_info(message: Message) -> None:
+    async with storage.session() as session:
+        info = await storage.get_info(session)
+        text = "*States:*\n"
+        for state, count in info["states"].items():
+            text += f"{state.value}: {count}\n"
+
+        text += "\n*Current results:*\n"
+        for option, count in info["results"].items():
+            text += f"{option}: {count}\n"
+
+        await message.answer(
+            text=text,
+            parse_mode=ParseMode.MARKDOWN_V2,
+        )
 
 
 @dp.callback_query_handler(VoteOptionCallback.filter())
@@ -121,23 +148,37 @@ async def vote_result_handler(
 
             logger.context_push(secret_code=secret_code)
             logger.info("SAVED_VOTE_RESULT")
+        except MachineError:
+            logger.exception("VOTE_RESULT_STATE_ERROR")
+            await bot.send_message(
+                chat_id=callback.from_user.id,
+                text="Ваш запрос обрабатывается, бот может отвечать "
+                "с задержкой из-за большого количества запросов. "
+                "Если вы все-таки не получили подтверждения "
+                "о том, что ваш голос принят, напишите "
+                f"организаторам @{ORG_TELEGRAM_USER}.",
+            )
+        else:
+            await bot.send_message(
+                chat_id=callback.from_user.id,
+                text=(
+                    f"Ваш голос за кандидата *{selected_option.text}* учтен\.\n"
+                    f"`{secret_code}`\n"
+                    "это ваш уникальный код\. Не показывайте его никому, "
+                    "его знаете только вы, он обеспечивает анонимность и "
+                    "прозрачность голосования\. Вместе с результатами голосования "
+                    "будет опубликовано соответствие секретных кодов и вариантов, "
+                    "которые выбрали владельцы кода\. Так вы сможете убедиться, "
+                    "что ваш голос не потерялся и был учтен правильно\."
+                ),
+                parse_mode=ParseMode.MARKDOWN_V2,
+            )
+            logger.info("VOTE_CODE_NOTIFICATION_SENT")
         finally:
-            await callback.message.edit_reply_markup(reply_markup=None)
-
-        await bot.send_message(
-            chat_id=callback.from_user.id,
-            text=(
-                f"Ваш голос за кандидата {selected_option.text} учтен.\n"
-                f"{secret_code}\n"
-                "это ваш уникальный код. Не показывайте его никому, "
-                "его знаете только вы, он обеспечивает анонимность и "
-                "прозрачность голосования. Вместе с результатами голосования "
-                "будет опубликовано соответствие секретных кодов и вариантов, "
-                "которые выбрали владельцы кода. Так вы сможете убедиться, "
-                "что ваш голос не потерялся и был учтен правильно."
-            ),
-        )
-        logger.info("VOTE_CODE_NOTIFICATION_SENT")
+            try:
+                await callback.message.edit_reply_markup(reply_markup=None)
+            except MessageNotModified:
+                logger.warn("MESSAGE_NOT_MODIFIED_ERROR", exc_info=True)
 
 
 @dp.callback_query_handler(IDFilter(chat_id=ADMIN_CHAT_ID), ApproveCallback.filter())
@@ -177,7 +218,10 @@ async def approve_handler(
         except MachineError as me:
             raise UserStateMachineError(message=me.value)
         finally:
-            await callback.message.edit_reply_markup(reply_markup=None)
+            try:
+                await callback.message.edit_reply_markup(reply_markup=None)
+            except MessageNotModified:
+                logger.warn("MESSAGE_NOT_MODIFIED_ERROR", exc_info=True)
 
 
 @dp.callback_query_handler(IDFilter(chat_id=ADMIN_CHAT_ID), RejectCallback.filter())
