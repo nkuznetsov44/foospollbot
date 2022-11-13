@@ -170,7 +170,7 @@ async def vote_result_handler(
                     "будет опубликовано соответствие секретных кодов и вариантов, "
                     "которые выбрали владельцы кода\. Так вы сможете убедиться, "
                     "что ваш голос не потерялся и был учтен правильно\."
-                ),
+                ).replace("_", "\_"),
                 parse_mode=ParseMode.MARKDOWN_V2,
             )
             logger.info("VOTE_CODE_NOTIFICATION_SENT")
