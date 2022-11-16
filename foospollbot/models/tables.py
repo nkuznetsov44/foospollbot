@@ -9,7 +9,7 @@ metadata_obj = sa.MetaData()
 telegram_users = sa.Table(
     "telegram_users",
     metadata_obj,
-    sa.Column("id", sa.Integer, primary_key=True),
+    sa.Column("id", sa.BigInteger, primary_key=True),
     sa.Column("first_name", sa.String, nullable=True),
     sa.Column("last_name", sa.String, nullable=True),
     sa.Column("username", sa.String, nullable=True),
@@ -34,7 +34,7 @@ user_infos = sa.Table(
     sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
     sa.Column(
         "telegram_user_id",
-        sa.Integer,
+        sa.BigInteger,
         sa.ForeignKey("telegram_users.id", ondelete="CASCADE"),
         unique=True,
     ),
@@ -61,7 +61,7 @@ vote_results = sa.Table(
     metadata_obj,
     sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
     sa.Column(
-        "telegram_user_id", sa.Integer, sa.ForeignKey("telegram_users.id"), unique=True
+        "telegram_user_id", sa.BigInteger, sa.ForeignKey("telegram_users.id"), unique=True
     ),
     sa.Column("selected_option_id", sa.Integer, sa.ForeignKey("vote_options.id")),
     sa.Column("secret_code", sa.String, unique=True),
